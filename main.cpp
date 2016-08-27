@@ -61,7 +61,7 @@ public:
 		}
 	}
 };
-
+ 
 class GameBoy
 {
 	CPU			_cpu;
