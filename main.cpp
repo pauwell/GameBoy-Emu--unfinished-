@@ -106,6 +106,7 @@ void write_rom_to_memory()
 
 }
 
+/* Main */
 int main()
 {
 	// Test emulator.
