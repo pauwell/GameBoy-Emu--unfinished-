@@ -25,19 +25,17 @@ const unsigned SCREEN_WIDTH			= 160,	// Width of screen  (20 tiles)
 const float	   CLOCK_SPEED = 4.194304f;		// Speed of the internal clock.
 
 
-/*
-	CPU.
-*/
+/* CPU. */
 class CPU
 {
 	/* Eight general purpose 8-bit registers that can be used together as 16-bit pairs. */
-	u16	_af, _bc, _de, _hl; 
+	u16 _af, _bc, _de, _hl; 
 
 	u16 _sp;	// Stack-pointer
 	u16 _pc;	// Program-counter
 
 public:
-	CPU(u8 (&memory)[MEMORY_SIZE])
+	CPU(/*u8 (&memory)[MEMORY_SIZE]*/)
 		: _af{ 0 }, _bc{ 0 }, _de{ 0 }, _hl{ 0 }, _sp{ 0 }, _pc{ 0 }
 	{
 	}
@@ -61,7 +59,7 @@ public:
 		}
 	}
 };
- 
+
 class GameBoy
 {
 	CPU			_cpu;
@@ -69,8 +67,8 @@ class GameBoy
 	u8 _memory[MEMORY_SIZE]; // Memory ($0000 - $FFFF). 
 
 private:
-	/* Read bytes from a rom-file and store them in _rom. */
-	void read_rom(const std::string path, const unsigned stream_size) // TODO runtime size-check.
+	/* Read bytes from a rom-file. */
+	std::string read_rom(const std::string path, const unsigned stream_size) // TODO runtime size-check.
 	{
 		char* rom_buffer = new char[stream_size];
 		std::ifstream ifs{ path, std::ios::binary | std::ios::in };
@@ -79,20 +77,37 @@ private:
 			ifs.read(rom_buffer, stream_size);
 		}
 		else std::cerr << "Unable to open file: " << path << std::endl;
-		_rom =  std::string{ rom_buffer, stream_size };
+		return std::string{ rom_buffer, stream_size };
 	}
 
 public:
 	GameBoy()
-		: _cpu{ _memory }, _rom("unknown")
+		: _rom("unknown")
 	{
 		// ...
 	}
 
-	void power_on(const std::string rom_path, const unsigned rom_size)
+	void power_on(const std::string bootstrap_path, std::string rom_path)
 	{
-		_cpu = CPU(_memory);
-		read_rom(rom_path, rom_size);
+		_cpu = CPU();						// Reset cpu.
+		_rom = read_rom(rom_path, 0x8000);	// Read rom-file.	
+
+		/* Copy bootstrap-rom to memory ($0000-$0100) */
+		auto bootstrap = read_rom(bootstrap_path, 0x100);	
+		for (size_t i = 0x0; i < bootstrap.size(); ++i)
+		{
+			_memory[i] = static_cast<u8>(bootstrap[i]);
+		}
+
+		/* Copy cartridge-rom to memory  */
+		for (size_t i = 0x0; i < 0x50; ++i) // Internal information($0100 - $014F)
+		{
+			_memory[0x100 + i] = _rom[i];
+		}
+		for (size_t i = 0x50; i < 0x8000; ++i) // Data
+		{
+			_memory[0x100 + i] = _rom[i];
+		}
 	}
 
 	void update()
@@ -101,17 +116,12 @@ public:
 	}
 };
 
-void write_rom_to_memory()
-{
 
-}
-
-/* Main */
 int main()
 {
 	// Test emulator.
 	GameBoy gameboy;
-	gameboy.power_on("_roms/Tetris (World).gb", 32000);
+	gameboy.power_on("_roms/DMG_ROM.bin", "_roms/Tetris (World).gb");
 	gameboy.update();
 
 	return EXIT_SUCCESS;
