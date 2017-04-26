@@ -140,7 +140,7 @@ public:
 
 class GameBoy
 {
-	CPU			_cpu;			// Processor.
+	CPU	_cpu;			// Processor.
 	std::string _rom_file;		// Rom-file data.
 	u8 _memory[MEMORY_SIZE];	// Memory ($0000 - $FFFF). 
 
